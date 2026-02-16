@@ -1,0 +1,49 @@
+name: Test Setup Subversion Action
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: Test on ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    
+    runs-on: ${{ matrix.os }}
+    
+    steps:
+      - name: Checkout action repository
+        uses: actions/checkout@v4
+        
+      - name: Setup Subversion
+        id: setup-svn
+        uses: ./  # Use the action from current repo
+        
+      - name: Verify SVN is installed
+        shell: bash
+        run: |
+          which svn || where svn
+          svn --version
+          
+      - name: Test SVN version output
+        shell: bash
+        run: |
+          echo "Installed version: ${{ steps.setup-svn.outputs.svn-version }}"
+          
+      - name: Test basic SVN command
+        shell: bash
+        run: |
+          # Test that svn help works
+          svn help
+          
+      - name: Test SVN checkout (public repo)
+        shell: bash
+        run: |
+          # Test checkout from Apache's public SVN repo
+          svn checkout https://svn.apache.org/repos/asf/subversion/trunk/notes --depth empty svn-test
+          ls -la svn-test || dir svn-test
