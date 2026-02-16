@@ -24,45 +24,67 @@ runs:
       run: |
         sudo apt-get update
         sudo apt-get install -y subversion
-        
+
     - name: Install Subversion on macOS
       if: runner.os == 'macOS'
       shell: bash
       run: |
         brew install subversion
-        
+
     - name: Install Subversion on Windows
       if: runner.os == 'Windows'
       shell: pwsh
       run: |
         choco install -y svn
-        
+
     - name: Add Subversion to PATH on Windows
       if: runner.os == 'Windows'
       shell: pwsh
       run: |
-        # Chocolatey typically installs to C:\Program Files\Subversion\bin
-        $svnPath = "C:\Program Files\Subversion\bin"
-        if (Test-Path $svnPath) {
-          echo "$svnPath" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
-          # Also add to current session PATH
-          $env:Path = "$svnPath;$env:Path"
+        # Find Subversion installation directory
+        $possiblePaths = @(
+          "C:\Program Files (x86)\Subversion\bin",
+          "C:\Program Files\Subversion\bin"
+        )
+
+        $svnPath = $null
+        foreach ($path in $possiblePaths) {
+          if (Test-Path $path) {
+            $svnPath = $path
+            break
+          }
         }
-        # Refresh environment to pick up Chocolatey changes
-        refreshenv
-        
+
+        if ($svnPath) {
+          echo "Found Subversion at: $svnPath"
+          echo "$svnPath" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+
+          # Verify files exist
+          $svnExe = Join-Path $svnPath "svn.exe"
+          $svnadminExe = Join-Path $svnPath "svnadmin.exe"
+          echo "svn.exe exists: $(Test-Path $svnExe)"
+          echo "svnadmin.exe exists: $(Test-Path $svnadminExe)"
+        } else {
+          echo "ERROR: Could not find Subversion installation directory"
+          echo "Searched paths:"
+          foreach ($path in $possiblePaths) {
+            echo "  - $path (exists: $(Test-Path $path))"
+          }
+          exit 1
+        }
+
     - name: Verify installation and get version
       id: svn-info
       shell: bash
       run: |
         svn --version --quiet
         echo "version=$(svn --version --quiet)" >> $GITHUB_OUTPUT
-        
+
     - name: Verify svnadmin is available
       shell: bash
       run: |
         svnadmin --version
-        
+
     - name: Display Subversion info
       shell: bash
       run: |
