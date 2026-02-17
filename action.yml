@@ -35,7 +35,7 @@ runs:
       if: runner.os == 'Windows'
       shell: pwsh
       run: |
-        choco install -y svn
+        choco install -y sliksvn
 
     - name: Add Subversion to PATH on Windows
       if: runner.os == 'Windows'
@@ -43,6 +43,8 @@ runs:
       run: |
         # Find Subversion installation directory
         $possiblePaths = @(
+          "C:\Program Files (x86)\SlikSvn\bin",
+          "C:\Program Files\SlikSvn\bin",
           "C:\Program Files (x86)\Subversion\bin",
           "C:\Program Files\Subversion\bin"
         )
